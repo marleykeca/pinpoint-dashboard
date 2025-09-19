@@ -1,7 +1,7 @@
 /* minimal style (same palette) */ 
 :root{--bg:#F8F9FB;--card:#e1ecf7;--ink:#000;--muted:#0D4F95;--line:#83b0e1;--chip:#e1ecf7;--radius:5px;--shadow:0 6px 24px rgba(0,0,0,.35)}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
-.app-header,.app-footer{position:sticky;inset-inline:0;background:#AECBEB;z-index:10}
+.app-header,.app-footer{position:sticky;inset-inline:0;background:#fff;z-index:10}
 .app-header{top:0;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)}
 .app-footer{bottom:0;padding:8px 16px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;color:var(--muted)}
 .brand{display:flex;align-items:center;gap:10px;cursor:pointer}.brand img{width:28px;height:28px;border-radius:5px}.brand span{font-weight:600}
