@@ -148,10 +148,10 @@
       const cat=field(rep,F.repCategory);
       const card=el('div',{class:'report-card','data-cat':cat},
         el('div',{class:'tag'},cat),
-        el('div',{},`<strong>Calibre</strong><br>${field(rep,F.repCalibre)||'—'}`),
-        el('div',{},`<h4>Raw feedback</h4>${field(rep,F.repRaw)||'—'}`),
-        el('div',{},`<h4>Strengths</h4>${field(rep,F.repStr)||'—'}`),
-        el('div',{},`<h4>Opportunities</h4>${field(rep,F.repOpp)||'—'}`),
+        el('div',{},`Calibre<br>${field(rep,F.repCalibre)||'—'}`),
+        el('div',{},`Raw feedback${field(rep,F.repRaw)||'—'}`),
+        el('div',{},`Strengths${field(rep,F.repStr)||'—'}`),
+        el('div',{},`Opportunities${field(rep,F.repOpp)||'—'}`),
         el('div',{class:'actions-row',id:`actions-${field(rep,F.repId)}`})
       );
       card.addEventListener('click',()=>focusReportByCategory(cat));
