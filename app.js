@@ -43,7 +43,49 @@
     renderCreators(); envPill.textContent='Mode: Airtable'; show('creators');
   }
 
-  function field(row, key){ return row[key] ?? row[key?.toLowerCase?.()] ?? ''; }
+  function extractValue(value, {forDisplay=false}={}){
+    if(value===undefined||value===null) return forDisplay?'':value;
+    if(Array.isArray(value)){
+      if(!forDisplay) return value;
+      return value.map(v=>extractValue(v,{forDisplay:true})).filter(v=>v!==undefined&&v!==null&&v!=='').join(', ');
+    }
+    if(typeof value==='object'){
+      if('value' in value) return extractValue(value.value,{forDisplay});
+      if(forDisplay){
+        if('name' in value) return extractValue(value.name,{forDisplay:true});
+        if('text' in value) return extractValue(value.text,{forDisplay:true});
+        if('label' in value) return extractValue(value.label,{forDisplay:true});
+        return '';
+      }
+      return value;
+    }
+    return value;
+  }
+
+  function field(row, key){
+    const raw = row?.[key] ?? row?.[key?.toLowerCase?.()];
+    if(raw===undefined||raw===null) return '';
+    return raw;
+  }
+
+  function displayField(row, key){
+    const raw = row?.[key] ?? row?.[key?.toLowerCase?.()];
+    const val = extractValue(raw,{forDisplay:true});
+    if(val===undefined||val===null) return '';
+    return String(val);
+  }
+
+  function deriveKeyAndLabel(rawValue, preferredLabel=''){
+    let key='';
+    if(preferredLabel) key=preferredLabel;
+    else if(Array.isArray(rawValue)) key=rawValue.map(x=>String(x??'')).join(', ');
+    else if(rawValue&&typeof rawValue==='object'){
+      try{ key=JSON.stringify(rawValue); }
+      catch(_err){ key=''; }
+    }else key = rawValue===undefined||rawValue===null?'':String(rawValue);
+    const label=preferredLabel || key || '—';
+    return {key,label};
+  }
 
   function keyFields(){ const f=cfg.fields; return {
     creatorId:f.creator.id, first:f.creator.first,last:f.creator.last,artist:f.creator.artist,email:f.creator.email,
@@ -73,10 +115,10 @@
       const creatorRecId = normalizeId(c.id);
       const count = counts[creatorRecId] || 0;
       const tr=el('tr',{},
-        el('td',{}, field(c,F.first)),
-        el('td',{}, field(c,F.last)),
-        el('td',{}, field(c,F.artist)),
-        el('td',{}, field(c,F.email)),
+        el('td',{}, displayField(c,F.first)),
+        el('td',{}, displayField(c,F.last)),
+        el('td',{}, displayField(c,F.artist)),
+        el('td',{}, displayField(c,F.email)),
         el('td',{class:'num'}, String(count))
       );
       tr.addEventListener('click', ()=> openProfile(c));
@@ -106,8 +148,8 @@
     requestsList.innerHTML='';
     reqs.forEach(r=>{
       const card=el('div',{class:'req'},
-        el('div',{}, el('div',{class:'meta'}, formatDate(field(r,F.reqDate))), el('div',{}, `${field(r,F.reqTitle)} — ${field(r,F.reqStage)}`)),
-        el('div',{class:'meta'}, field(state.currentCreator,F.artist))
+        el('div',{}, el('div',{class:'meta'}, formatDate(field(r,F.reqDate))), el('div',{}, `${displayField(r,F.reqTitle)} — ${displayField(r,F.reqStage)}`)),
+        el('div',{class:'meta'}, displayField(state.currentCreator,F.artist))
       );
       card.addEventListener('click', ()=> openRequest(r));
       requestsList.append(card);
@@ -119,10 +161,10 @@
     state.currentRequest=request; const F=keyFields();
     const headerSpec=[
       {label:'Submitted', value: formatDate(field(request,F.reqDate))},
-      {label:'Artist', value: field(state.currentCreator,F.artist)},
-      {label:'Track title', value: field(request,F.reqTitle)},
-      {label:'Track stage', value: field(request,F.reqStage)},
-      {label:'Email', value: field(state.currentCreator,F.email)},
+      {label:'Artist', value: displayField(state.currentCreator,F.artist)},
+      {label:'Track title', value: displayField(request,F.reqTitle)},
+      {label:'Track stage', value: displayField(request,F.reqStage)},
+      {label:'Email', value: displayField(state.currentCreator,F.email)},
     ];
     requestHeader.innerHTML=headerSpec.map(h=>`<div class="field"><div class="label">${h.label}</div><div class="value">${h.value||'—'}</div></div>`).join('');
 
@@ -135,33 +177,40 @@
 
   function renderChart(reports){
     const F=keyFields();
-    const labels=reports.map(r=>field(r,F.repCategory));
+    const catMeta=reports.map(rep=>{
+      const catRaw=field(rep,F.repCategory);
+      const catLabel=displayField(rep,F.repCategory);
+      return deriveKeyAndLabel(catRaw, catLabel);
+    });
+    const labels=catMeta.map(c=>c.label);
     const actual=reports.map(r=>Number(field(r,F.repActual))||0);
     const potential=reports.map(r=>Number(field(r,F.repPotential))||0);
     if(state.chart) state.chart.destroy();
-    state.chart=new Chart($('#scoresChart'),{type:'bar',data:{labels,datasets:[{label:'Actual',data:actual,borderWidth:1},{label:'Potential',data:potential,borderWidth:1}]},options:{responsive:true,indexAxis:'y',scales:{x:{suggestedMin:0,suggestedMax:5,ticks:{stepSize:0.5}}},plugins:{legend:{display:true,position:'top'}},onClick:(evt,els)=>{if(els&&els.length){const cat=labels[els[0].index]; focusReportByCategory(cat);}}}});
+    state.chart=new Chart($('#scoresChart'),{type:'bar',data:{labels,datasets:[{label:'Actual',data:actual,borderWidth:1},{label:'Potential',data:potential,borderWidth:1}]},options:{responsive:true,indexAxis:'y',scales:{x:{suggestedMin:0,suggestedMax:5,ticks:{stepSize:0.5}}},plugins:{legend:{display:true,position:'top'}},onClick:(evt,els)=>{if(els&&els.length){const idx=els[0].index; const cat=catMeta[idx]?.key ?? ''; focusReportByCategory(cat);}}}});
   }
 
   function renderReportCards(reports){
     const F=keyFields(); reportsRight.innerHTML='';
     reports.forEach(rep=>{
-      const cat=field(rep,F.repCategory);
-      const card=el('div',{class:'report-card','data-cat':cat},
-        el('div',{class:'tag'},cat),
-        el('div',{},`Calibre<br>${field(rep,F.repCalibre)||'—'}`),
-        el('div',{},`Raw feedback${field(rep,F.repRaw)||'—'}`),
-        el('div',{},`Strengths${field(rep,F.repStr)||'—'}`),
-        el('div',{},`Opportunities${field(rep,F.repOpp)||'—'}`),
+      const catRaw=field(rep,F.repCategory);
+      const catLabel=displayField(rep,F.repCategory);
+      const {key:catKey,label:tagText}=deriveKeyAndLabel(catRaw, catLabel);
+      const card=el('div',{class:'report-card','data-cat':catKey},
+        el('div',{class:'tag'},tagText),
+        el('div',{},`Calibre<br>${displayField(rep,F.repCalibre)||'—'}`),
+        el('div',{},`Raw feedback${displayField(rep,F.repRaw)||'—'}`),
+        el('div',{},`Strengths${displayField(rep,F.repStr)||'—'}`),
+        el('div',{},`Opportunities${displayField(rep,F.repOpp)||'—'}`),
         el('div',{class:'actions-row',id:`actions-${field(rep,F.repId)}`})
       );
-      card.addEventListener('click',()=>focusReportByCategory(cat));
+      card.addEventListener('click',()=>focusReportByCategory(catKey));
       reportsRight.append(card);
       // Buttons from Actions
       const actions = state.actions.filter(a=> getLinkedIds(field(a,F.actRepLink)).includes(normalizeId(rep.id)) );
       const row=card.querySelector('.actions-row');
       if(!actions.length) row.append(el('span',{class:'meta'},'No actions'));
       actions.forEach(a=>{
-        const btn=el('button',{class:'btn'}, field(a,F.actAnchor)||'Action');
+        const btn=el('button',{class:'btn'}, displayField(a,F.actAnchor)||'Action');
         btn.addEventListener('click',(ev)=>{ev.stopPropagation(); openActionsAside(a.id, rep.id);});
         row.append(btn);
       });
@@ -184,10 +233,10 @@
       const isSelected = normalizeId(a.id)===normalizeId(selectedActionId);
       const card=el('div',{class:'action-card '+(isSelected?'':'collapsed')},
         el('div',{class:'header'},
-          el('div',{}, el('div',{class:'category'}, ''+ (field(a,F.actCategory)||'')), el('div',{class:'anchor'}, field(a,F.actAnchor)||'Action') ),
+          el('div',{}, el('div',{class:'category'}, ''+ (displayField(a,F.actCategory)||'')), el('div',{class:'anchor'}, displayField(a,F.actAnchor)||'Action') ),
           el('button',{class:'btn'}, isSelected?'Collapse':'Expand')
         ),
-        el('div',{class:'body'}, field(a,F.actDetails)||'')
+        el('div',{class:'body'}, displayField(a,F.actDetails)||'')
       );
       const toggle=card.querySelector('button');
       toggle.addEventListener('click',()=>{card.classList.toggle('collapsed'); toggle.textContent=card.classList.contains('collapsed')?'Expand':'Collapse';});
