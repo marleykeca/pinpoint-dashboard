@@ -14,7 +14,9 @@ window.PinpointConfig = {
       creatorId: 'creator_id_',            // linked-record array (rec…)
       date: 'request_submission_date',
       title: 'track_title',
-      stage: 'track_stage'
+      stage: 'track_stage',
+      trackUrl: 'fldpsdaDJJwL3Mz5J',
+      trackFile: 'fld5GNUpbY7Bj5kgk'
     },
     report: {
       id: 'report_id_',

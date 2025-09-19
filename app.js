@@ -76,20 +76,34 @@
   }
 
   function deriveKeyAndLabel(rawValue, preferredLabel=''){
-    let key='';
-    if(preferredLabel) key=preferredLabel;
-    else if(Array.isArray(rawValue)) key=rawValue.map(x=>String(x??'')).join(', ');
-    else if(rawValue&&typeof rawValue==='object'){
-      try{ key=JSON.stringify(rawValue); }
-      catch(_err){ key=''; }
-    }else key = rawValue===undefined||rawValue===null?'':String(rawValue);
-    const label=preferredLabel || key || '—';
+    const normalize=(value)=>{
+      if(value===undefined||value===null) return '';
+      if(Array.isArray(value)){
+        return value.map(normalize).join('|');
+      }
+      if(typeof value==='object'){
+        try{
+          return Object.keys(value)
+            .sort()
+            .map(k=>`${k}:${normalize(value[k])}`)
+            .join('|');
+        }catch(_err){
+          return '';
+        }
+      }
+      return String(value);
+    };
+
+    const normalizedKey=normalize(rawValue);
+    const key=normalizedKey || (preferredLabel || '');
+    const label=preferredLabel || normalizedKey || '—';
     return {key,label};
   }
 
   function keyFields(){ const f=cfg.fields; return {
     creatorId:f.creator.id, first:f.creator.first,last:f.creator.last,artist:f.creator.artist,email:f.creator.email,
     reqId:f.request.id, reqCreatorLink:f.request.creatorId, reqDate:f.request.date, reqTitle:f.request.title, reqStage:f.request.stage,
+    reqTrackUrl:f.request.trackUrl, reqTrackFile:f.request.trackFile,
     repId:f.report.id, repReqLink:f.report.requestId, repCategory:f.report.category, repCalibre:f.report.calibre,
     repRaw:f.report.raw, repStr:f.report.strengths, repOpp:f.report.opportunities, repActual:f.report.actual, repPotential:f.report.potential,
     actId:f.action.id, actRepLink:f.action.reportId, actAnchor:f.action.anchor, actDetails:f.action.details, actCategory:f.action.category
@@ -159,14 +173,72 @@
 
   function openRequest(request){
     state.currentRequest=request; const F=keyFields();
+    const trackUrlRaw=field(request,F.reqTrackUrl);
+    const trackUrl=(()=>{
+      const normalizeUrlValue=(val)=>{
+        if(!val) return '';
+        if(typeof val==='string') return val.trim();
+        if(typeof val==='object'){
+          if(val.url) return String(val.url).trim();
+          if(val.value) return String(val.value).trim();
+          if(val.text) return String(val.text).trim();
+        }
+        return String(val).trim();
+      };
+
+      if(!trackUrlRaw) return '';
+      if(Array.isArray(trackUrlRaw)){
+        for(const item of trackUrlRaw){
+          const normalized=normalizeUrlValue(item);
+          if(normalized) return normalized;
+        }
+        return '';
+      }
+      return normalizeUrlValue(trackUrlRaw);
+    })();
+
+    const trackFileRaw=field(request,F.reqTrackFile);
+    const trackFiles=Array.isArray(trackFileRaw)?trackFileRaw.filter(Boolean):(trackFileRaw?[trackFileRaw]:[]);
+
+    const trackFileNodes=trackFiles.map(file=>{
+      const candidate=file?.url || file?.value || (typeof file==='string'?file:'');
+      const url=candidate?String(candidate).trim():'';
+      if(!url) return null;
+      const audio=el('audio',{controls:'',preload:'none'});
+      audio.src=url;
+      if(file?.filename) audio.title=file.filename;
+      return audio;
+    }).filter(Boolean);
+
     const headerSpec=[
-      {label:'Submitted', value: formatDate(field(request,F.reqDate))},
-      {label:'Artist', value: displayField(state.currentCreator,F.artist)},
-      {label:'Track title', value: displayField(request,F.reqTitle)},
-      {label:'Track stage', value: displayField(request,F.reqStage)},
-      {label:'Email', value: displayField(state.currentCreator,F.email)},
+      {label:'Submitted', text: formatDate(field(request,F.reqDate))},
+      {label:'Artist', text: displayField(state.currentCreator,F.artist)},
+      {label:'Track title', text: displayField(request,F.reqTitle)},
+      {label:'Track stage', text: displayField(request,F.reqStage)},
+      {label:'Email', text: displayField(state.currentCreator,F.email)},
+      {label:'Track URL', nodes: trackUrl? [el('a',{href:trackUrl,target:'_blank',rel:'noopener noreferrer'}, trackUrl)]:[]},
+      {label:'Track file', nodes: trackFileNodes}
     ];
-    requestHeader.innerHTML=headerSpec.map(h=>`<div class="field"><div class="label">${h.label}</div><div class="value">${h.value||'—'}</div></div>`).join('');
+
+    requestHeader.innerHTML='';
+    headerSpec.forEach(spec=>{
+      const valueEl=el('div',{class:'value'});
+      if(spec.nodes){
+        if(spec.nodes.length){
+          spec.nodes.forEach(node=>valueEl.append(node));
+        }else{
+          valueEl.textContent='—';
+        }
+      }else{
+        valueEl.textContent=spec.text || '—';
+      }
+      requestHeader.append(
+        el('div',{class:'field'},
+          el('div',{class:'label'},spec.label),
+          valueEl
+        )
+      );
+    });
 
     const reqRecId = normalizeId(request.id) || getLinkedIds(field(request,F.reqId))[0];
     const reports = state.reports.filter(rep=> getLinkedIds(field(rep,F.repReqLink)).includes(reqRecId) );
