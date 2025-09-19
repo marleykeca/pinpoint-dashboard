@@ -21,7 +21,7 @@ main{padding:24px;max-width:1100px;margin:0 auto}h2{font-size:26px;margin:10px 0
 .request-header .label{color:var(--muted);font-size:12px;margin-bottom:4px}.request-header .value{font-weight:600}
 .report-layout{display:grid;grid-template-columns:1fr 1fr;gap:16px}.chart-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
 .reports-right{display:flex;flex-direction:column;gap:12px}.report-card{background:var(--card);border:1px solid var(--line);border-radius:5px;padding:14px}
-.report-card.active{outline:2px solid #0D4F95}.report-card .tag{display:inline-block;background:#0D4F95;border:1px solid #0D4F95;color:#000;padding:6px 10px;border-radius:999px;font-size:12px;margin-bottom:8px}
+.report-card.active{outline:2px solid #0D4F95}.report-card .tag{display:inline-block;background:#AECBEB;border:1px solid #0D4F95;color:#000;padding:6px 10px;border-radius:999px;font-size:12px;margin-bottom:8px}
 .report-card .actions-row{margin-top:12px;display:flex;flex-wrap:wrap;gap:8px}.btn{background:var(--chip);color:var(--ink);border:1px solid var(--line);padding:9px 12px;border-radius:999px;cursor:pointer}
 .actions-aside{position:fixed;top:64px;right:-420px;width:380px;bottom:48px;background:var(--card);border-left:1px solid var(--line);box-shadow:var(--shadow);border-top-left-radius:5px;border-bottom-left-radius:5px;transition:right .25s ease;display:flex;flex-direction:column}
 .actions-aside.open{right:0}.aside-header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--line)}
