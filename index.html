@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pinpoint — Creator Dashboard</title>
+  <link rel="icon" href="./assets/favicon.ico" />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand" id="brandLink" role="button">
+      <img src="./assets/logo.png" alt="Rilium Pinpoint" />
+      <span>Pinpoint</span>
+    </div>
+    <div class="user-pill" id="userPill">Guest</div>
+  </header>
+
+  <main id="app">
+    <section id="creatorsView" class="view hidden">
+      <h2>Creators</h2>
+      <div class="table-controls">
+        <input id="creatorSearch" type="search" placeholder="Search creators…" />
+      </div>
+      <table class="grid" id="creatorsTable">
+        <thead>
+          <tr>
+            <th>First</th><th>Last</th><th>Artist</th><th>Email</th><th class="num">Requests</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section id="profileView" class="view hidden">
+      <button class="link back" id="backToCreators">← Back</button>
+      <h2>Profile</h2>
+      <div id="profileFields" class="card"></div>
+      <div class="section-split">
+        <h3>Requests</h3>
+        <div class="sort-row">
+          <label>Sort by date:</label>
+          <select id="requestSort">
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
+          </select>
+        </div>
+      </div>
+      <div id="requestsList" class="list"></div>
+    </section>
+
+    <section id="reportView" class="view hidden">
+      <button class="link back" id="backToProfile">← Back</button>
+      <div id="requestHeader" class="request-header"></div>
+
+      <h2>Report Card</h2>
+      <div class="report-layout">
+        <div class="chart-card">
+          <canvas id="scoresChart" width="600" height="380" aria-label="Scores by category"></canvas>
+        </div>
+        <div id="reportsRight" class="reports-right"></div>
+      </div>
+    </section>
+
+    <aside id="actionsAside" class="actions-aside">
+      <div class="aside-header">
+        <strong>Actions</strong>
+        <button id="closeAside" title="Close">✕</button>
+      </div>
+      <div id="actionsList" class="actions-list"></div>
+    </aside>
+  </main>
+
+  <footer class="app-footer">
+    <small>© Rilium Learning</small>
+    <div class="env-pill" id="envPill">Mode: Airtable (IDs)</div>
+  </footer>
+
+  <script src="./config.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
