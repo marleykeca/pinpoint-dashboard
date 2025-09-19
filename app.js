@@ -76,14 +76,27 @@
   }
 
   function deriveKeyAndLabel(rawValue, preferredLabel=''){
-    let key='';
-    if(preferredLabel) key=preferredLabel;
-    else if(Array.isArray(rawValue)) key=rawValue.map(x=>String(x??'')).join(', ');
-    else if(rawValue&&typeof rawValue==='object'){
-      try{ key=JSON.stringify(rawValue); }
-      catch(_err){ key=''; }
-    }else key = rawValue===undefined||rawValue===null?'':String(rawValue);
-    const label=preferredLabel || key || '—';
+    const normalize=(value)=>{
+      if(value===undefined||value===null) return '';
+      if(Array.isArray(value)){
+        return value.map(normalize).join('|');
+      }
+      if(typeof value==='object'){
+        try{
+          return Object.keys(value)
+            .sort()
+            .map(k=>`${k}:${normalize(value[k])}`)
+            .join('|');
+        }catch(_err){
+          return '';
+        }
+      }
+      return String(value);
+    };
+
+    const normalizedKey=normalize(rawValue);
+    const key=normalizedKey || (preferredLabel || '');
+    const label=preferredLabel || normalizedKey || '—';
     return {key,label};
   }
 
