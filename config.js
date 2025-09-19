@@ -29,7 +29,7 @@ window.PinpointConfig = {
     },
     action: {
       id: 'action_id_',
-      reportId: 'report_id_',                 // IMPORTANT: linked-record array (rec…)
+      reportId: 'report',                 // IMPORTANT: linked-record array (rec…)
       anchor: 'anchor_text',
       details: 'description',
       category: 'report_category'         // optional: actions carry this too
