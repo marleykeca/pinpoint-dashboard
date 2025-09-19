@@ -198,7 +198,15 @@
       const calibreText=displayField(rep,F.repCalibre)||'—';
       const rawFeedback=displayField(rep,F.repRaw)||'—';
       const strengthsText=displayField(rep,F.repStr)||'—';
-      const weaknessesText=displayField(rep,F.repOpp)||'—';
+      const opportunitiesText=displayField(rep,F.repOpp)||'—';
+      const strengthsNote=el('div',{class:'report-note strengths'},
+        el('span',{class:'note-tag'},'Strengths'),
+        el('span',{class:'note-text'}, strengthsText)
+      );
+      const opportunitiesNote=el('div',{class:'report-note opportunities'},
+        el('span',{class:'note-tag'},'Opportunities'),
+        el('span',{class:'note-text'}, opportunitiesText)
+      );
       const card=el('div',{class:'report-card','data-cat':catKey},
         el('div',{class:'tag'},tagText),
         el('div',{class:'report-field report-calibre'},
@@ -209,27 +217,49 @@
           el('span',{class:'field-label'},'Raw feedback'),
           el('span',{class:'field-value'}, rawFeedback)
         ),
-        el('div',{class:'report-note strengths'},
-          el('span',{class:'note-tag'},'Strengths'),
-          el('span',{class:'note-text'}, strengthsText)
-        ),
-        el('div',{class:'report-note weaknesses'},
-          el('span',{class:'note-tag'},'Weaknesses'),
-          el('span',{class:'note-text'}, weaknessesText)
-        ),
-        el('div',{class:'actions-row',id:`actions-${field(rep,F.repId)}`})
+        strengthsNote,
+        opportunitiesNote
       );
       card.addEventListener('click',()=>focusReportByCategory(catKey));
       reportsRight.append(card);
       // Buttons from Actions
       const actions = state.actions.filter(a=> getLinkedIds(field(a,F.actRepLink)).includes(normalizeId(rep.id)) );
-      const row=card.querySelector('.actions-row');
-      if(!actions.length) row.append(el('span',{class:'meta'},'No actions'));
-      actions.forEach(a=>{
+      const strengthsActionsContainer=el('div',{class:'note-actions'});
+      const opportunitiesActionsContainer=el('div',{class:'note-actions'});
+      const generalActionsRow=el('div',{class:'actions-row'});
+
+      const toButton=a=>{
         const btn=el('button',{class:'btn'}, displayField(a,F.actAnchor)||'Action');
         btn.addEventListener('click',(ev)=>{ev.stopPropagation(); openActionsAside(a.id, rep.id);});
-        row.append(btn);
+        return btn;
+      };
+
+      const strengthActions=[];
+      const opportunityActions=[];
+      const generalActions=[];
+      actions.forEach(a=>{
+        const catText=(displayField(a,F.actCategory)||'').toLowerCase();
+        if(catText.includes('strength')) strengthActions.push(a);
+        else if(catText.includes('opportun')) opportunityActions.push(a);
+        else generalActions.push(a);
       });
+
+      if(strengthActions.length){
+        strengthActions.forEach(a=>strengthsActionsContainer.append(toButton(a)));
+        strengthsNote.append(strengthsActionsContainer);
+      }
+      if(opportunityActions.length){
+        opportunityActions.forEach(a=>opportunitiesActionsContainer.append(toButton(a)));
+        opportunitiesNote.append(opportunitiesActionsContainer);
+      }
+      if(generalActions.length){
+        generalActions.forEach(a=>generalActionsRow.append(toButton(a)));
+        card.append(generalActionsRow);
+      }
+      if(!actions.length){
+        const noActionsRow=el('div',{class:'actions-row'}, el('span',{class:'meta'},'No actions'));
+        card.append(noActionsRow);
+      }
     });
   }
 
