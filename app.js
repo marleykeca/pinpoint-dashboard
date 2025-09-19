@@ -200,15 +200,27 @@
     const trackFileRaw=field(request,F.reqTrackFile);
     const trackFiles=Array.isArray(trackFileRaw)?trackFileRaw.filter(Boolean):(trackFileRaw?[trackFileRaw]:[]);
 
-    const trackFileNodes=trackFiles.map(file=>{
+    const buildTrackFileNode=(file)=>{
       const candidate=file?.url || file?.value || (typeof file==='string'?file:'');
       const url=candidate?String(candidate).trim():'';
       if(!url) return null;
-      const audio=el('audio',{controls:'',preload:'none'});
-      audio.src=url;
-      if(file?.filename) audio.title=file.filename;
-      return audio;
-    }).filter(Boolean);
+
+      const mime=(file?.type || file?.mimeType || '').toLowerCase();
+      const filename=file?.filename || file?.name || '';
+
+      if(mime.startsWith('audio/') || (!mime && url.match(/\.(mp3|wav|aac|m4a)$/i))){
+        const audio=el('audio',{controls:'',preload:'none'});
+        audio.src=url;
+        if(filename) audio.title=filename;
+        return audio;
+      }
+
+      const link=el('a',{href:url,target:'_blank',rel:'noopener noreferrer'});
+      link.textContent=filename || url;
+      return link;
+    };
+
+    const trackFileNodes=trackFiles.map(buildTrackFileNode).filter(Boolean);
 
     const headerSpec=[
       {label:'Submitted', text: formatDate(field(request,F.reqDate))},
